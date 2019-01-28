@@ -3,6 +3,7 @@ package db;
 
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -233,9 +234,17 @@ public class Requestor {
             InitialContext ic = new InitialContext();
             DataSource ds = (DataSource) ic.lookup("java:comp/env/jdbc/_MySQLSchemas");
             conn = ds.getConnection();
-        } catch (NamingException ex) {
-            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
+            //Class.forName("com.mysql.jdbc.Driver").newInstance();
+            //conn = DriverManager.getConnection("jdbc:mysql://SG-test-117-master.servers.mongodirector.com:3306/test?user=qwertyuser&password=Qwertyuser1!&useSSL=false");
         } catch (SQLException ex) {
+            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (ClassNotFoundException ex) {
+//            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (InstantiationException ex) {
+//            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (IllegalAccessException ex) {
+//            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NamingException ex) {
             Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
         }
         
