@@ -1,1 +1,1 @@
-web: java -jar target/joy_db_2.jar
+web: java -jar target/Joy_DB_2-1.0-SNAPSHOT.war
