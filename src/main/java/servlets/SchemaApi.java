@@ -44,15 +44,11 @@ public class SchemaApi extends HttpServlet {
         System.out.println("request: " + request.toString());
         
         response.setContentType("application/json;charset=utf-8");
-        Requestor requestor = new Requestor();
-        List<Schema> list = requestor.getAllSchemas();
+        //Requestor requestor = new Requestor();
+        //List<Schema> list = requestor.getAllSchemas();
         
-        //System.out.println("list: " + list);
-        
-        Schemas schemas = new Schemas(list);
-        String responseBody = gson.toJson(schemas);
-        
-        //System.out.println("responseBody: " + responseBody);
+        //Schemas schemas = new Schemas(list);
+        String responseBody = gson.toJson("{name:'blablabla'}");
         
         try(PrintWriter out = response.getWriter()){
             out.println(responseBody);
