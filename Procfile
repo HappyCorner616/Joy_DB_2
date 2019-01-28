@@ -1,0 +1,1 @@
+web: java -jar target/joy_db_2.jar
