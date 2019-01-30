@@ -231,20 +231,18 @@ public class Requestor {
         Connection conn = null;
         
         try {
-            InitialContext ic = new InitialContext();
-            DataSource ds = (DataSource) ic.lookup("java:comp/env/jdbc/_MySQLSchemas");
-            conn = ds.getConnection();
-            //Class.forName("com.mysql.jdbc.Driver").newInstance();
-            //conn = DriverManager.getConnection("jdbc:mysql://SG-test-117-master.servers.mongodirector.com:3306/test?user=qwertyuser&password=Qwertyuser1!&useSSL=false");
+//            InitialContext ic = new InitialContext();
+//            DataSource ds = (DataSource) ic.lookup("java:comp/env/jdbc/_MySQLSchemas");
+//            conn = ds.getConnection();
+            Class.forName("com.mysql.jdbc.Driver").newInstance();
+            conn = DriverManager.getConnection("jdbc:mysql://SG-test-117-master.servers.mongodirector.com:3306/test?user=qwertyuser&password=Qwertyuser1!&useSSL=false");
         } catch (SQLException ex) {
             Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (ClassNotFoundException ex) {
-//            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (InstantiationException ex) {
-//            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (IllegalAccessException ex) {
-//            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (NamingException ex) {
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
             Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
         }
         
