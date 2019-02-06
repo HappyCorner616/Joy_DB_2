@@ -1,8 +1,3 @@
-<%-- 
-    Document   : index
-    Created on : Jan 28, 2019, 11:17:11 AM
-    Author     : Archer
---%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
@@ -13,5 +8,6 @@
     </head>
     <body>
         <h1>Hello World!</h1>
+        <h3>This WAR project deployed from cmd</h3>
     </body>
 </html>

@@ -29,6 +29,15 @@ import com.mycompany.joy_db_2.model.sql.enums.SqlDataTypes;
 
 public class Requestor {
     
+    private static final String HEROKU_URI = "postgres://mhymvbvcmdathp:a4f43202bd4b441a0da9a4418c2aaae9517bc3476e4de22e7b14500382dd1777@ec2-54-243-223-245.compute-1.amazonaws.com:5432/dbiifilj2htvrs";
+    private static final String HEROKU_USER = "mhymvbvcmdathp";
+    private static final String HEROKU_PASSWORD = "a4f43202bd4b441a0da9a4418c2aaae9517bc3476e4de22e7b14500382dd1777";
+    private static final int HEROKU_MODE = 1;
+    private static final int LOCAL_MODE = 2;
+    
+    //private static final int CURRRENT_MODE = HEROKU_MODE;
+    private static final int CURRRENT_MODE = LOCAL_MODE;
+    
     public List<Schema> getAllSchemas(){
         Map<String, Schema> schemas = new TreeMap<>();
         
@@ -228,14 +237,46 @@ public class Requestor {
     }
     
     private Connection getConnection(){
+       if(CURRRENT_MODE == LOCAL_MODE){
+           return getMySqlConnection();
+       }else{
+           return getPostgreSqlConnection();
+       }      
+    }
+    
+    private Connection getMySqlConnection(){
         Connection conn = null;
         
         try {
 //            InitialContext ic = new InitialContext();
 //            DataSource ds = (DataSource) ic.lookup("java:comp/env/jdbc/_MySQLSchemas");
 //            conn = ds.getConnection();
-            Class.forName("com.mysql.jdbc.Driver").newInstance();
-            conn = DriverManager.getConnection("jdbc:mysql://SG-test-117-master.servers.mongodirector.com:3306/test?user=qwertyuser&password=Qwertyuser1!&useSSL=false");
+            Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
+            //conn = DriverManager.getConnection("jdbc:mysql://SG-test-117-master.servers.mongodirector.com:3306/test?user=qwertyuser&password=Qwertyuser1!&useSSL=false");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/?user=glassfishsql&password=qwerty&useSSL=false&serverTimezone=UTC");
+        } catch (SQLException ex) {
+            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return conn;
+    }
+    
+    private Connection getPostgreSqlConnection(){
+        Connection conn = null;
+        
+        try {
+//            InitialContext ic = new InitialContext();
+//            DataSource ds = (DataSource) ic.lookup("java:comp/env/jdbc/_MySQLSchemas");
+//            conn = ds.getConnection();
+            Class.forName("org.postgresql.Driver").newInstance();
+            conn = DriverManager.getConnection("postgres://mhymvbvcmdathp:a4f43202bd4b441a0da9a4418c2aaae9517bc3476e4de22e7b14500382dd1777@ec2-54-243-223-245.compute-1.amazonaws.com:5432/dbiifilj2htvrs");
+            //conn = DriverManager.getConnection("jdbc.mysql://localhost:3306/?udeSSL=false&serverTmeZome=Europe/Moscow", "glassfishsql", "qwerty");
         } catch (SQLException ex) {
             Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
         } catch (ClassNotFoundException ex) {

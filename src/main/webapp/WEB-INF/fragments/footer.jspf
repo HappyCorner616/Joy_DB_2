@@ -1,0 +1,10 @@
+
+</div>
+<script src="../scripts/myScript.js"></script>
+<!--<script>
+var tables = document.querySelectorAll("div.table");
+for(var i = 0; i < tables.length ; i++){
+    tables[i].style = "display:none;";
+}
+</script>-->
+</body>

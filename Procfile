@@ -1,1 +1,1 @@
-web: java -jar target/Joy_DB_2-1.0-SNAPSHOT.jar
+web: java -jar target/webapp-runner.jar

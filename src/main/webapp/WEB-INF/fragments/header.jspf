@@ -1,0 +1,12 @@
+
+<%@ page pageEncoding="UTF-8" %>
+<!DOCTYPE html>
+<head>
+    <title>db tools 0.2</title>
+    <meta charset="UTF-8">
+    <link href="../css/main.css" rel="stylesheet" type="text/css">
+    <link res="shorcut icon" href="../images/db_tools_logo.png" type="image/png">
+</head>
+<body>
+    <h2>DATA BASE TOOLS</h2>
+    <div  class="content">

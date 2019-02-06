@@ -12,6 +12,10 @@
         <servlet-name>RowApi</servlet-name>
         <servlet-class>com.mycompany.joy_db_2.servlets.RowApi</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>SqlRequestApi</servlet-name>
+        <servlet-class>com.mycompany.joy_db_2.servlets.SqlRequestApi</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>SchemaApi</servlet-name>
         <url-pattern>/Schema</url-pattern>
@@ -24,15 +28,24 @@
         <servlet-name>RowApi</servlet-name>
         <url-pattern>/Row</url-pattern>
     </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>SqlRequestApi</servlet-name>
+        <url-pattern>/SqlRequest</url-pattern>
+    </servlet-mapping>
     <session-config>
         <session-timeout>
             30
         </session-timeout>
     </session-config>
-    <resource-ref>
-        <res-ref-name>jdbc/_MySQLSchemas</res-ref-name>
-        <res-type>java.net.URL</res-type>
-        <res-auth>Container</res-auth>
-        <res-sharing-scope>Shareable</res-sharing-scope>
-    </resource-ref>
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+    <jsp-config>
+        <jsp-property-group>
+            <display-name>header and footer</display-name>
+            <url-pattern>/pages/*</url-pattern>
+            <include-prelude>/WEB-INF/fragments/header.jspf</include-prelude>
+            <include-coda>/WEB-INF/fragments/footer.jspf</include-coda>
+        </jsp-property-group>
+    </jsp-config>
 </web-app>
