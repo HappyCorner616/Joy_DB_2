@@ -9,64 +9,94 @@ import com.mycompany.joy_db_2.model.interfaces.Propertyable;
 import java.util.Comparator;
 
 
-public class Column implements Nameable, Propertyable, Comparable<Column>{
+public class Column implements Comparable<Column>{
 
     private String name;
-    private SqlDataTypes type;
+    private SqlDataTypes mainType;
+    private String type;
+    private boolean unsigned;
     private ColumnKeys key;
     private boolean autoIncrement;
     private int position;
     
     public Column(){
         name = "_";
-        type = SqlDataTypes.VARCHAR;
+        mainType = SqlDataTypes.STRING;
+        type = "varchar(30)";
     }
     
     public Column(String name){
         this.name = name;
-        type = SqlDataTypes.VARCHAR;
-    }
-    
-    public Column(String name, int position){
-        this.name = name;
-        this.position = position;
-        type = SqlDataTypes.VARCHAR;
-    }
-    
-    public Column(String name, SqlDataTypes type){
-        this.name = name;
-        this.type = type;
+        mainType = SqlDataTypes.STRING;
+        type = "varchar(30)";
     }
 
-    public Column(String name, SqlDataTypes type, ColumnKeys key, boolean autoIncrement, int position) {
+    public Column(String name, SqlDataTypes mainType, String type, boolean unsigned, ColumnKeys key, boolean autoIncrement, int position) {
         this.name = name;
-        this.type = type;
+        this.mainType = mainType;
+        this.type = type.split(" ")[0];
+        this.unsigned = unsigned;
         this.key = key;
         this.autoIncrement = autoIncrement;
         this.position = position;
     }
     
-    @Override
-    public String getName(){
-        return name;
+    public Column(String name, String type, ColumnKeys key, boolean autoIncrement, int position) {
+        this.name = name;
+        this.type = type.split(" ")[0];
+        this.key = key;
+        this.autoIncrement = autoIncrement;
+        this.position = position;
+        if(isLOB()){
+            mainType = SqlDataTypes.LOB;
+        }else if(isNumeric()){
+            mainType = SqlDataTypes.NUMERIC;
+        }else if(isString()){
+            mainType = SqlDataTypes.STRING;
+        }else if(isDate()){
+            mainType = SqlDataTypes.DATE;
+        }
+        unsigned = type.contains("unsigned");
     }
 
-    public SqlDataTypes getType() {
-        return type;
-    }
-
-    public ColumnKeys getKey() {
-        return key;
-    }
-
-    public boolean isAutoIncrement() {
-        return autoIncrement;
+    public boolean isNumeric(){
+        if(type.contains("bit") || type.contains("int")
+        || type.contains("decimal") || type.contains("float")
+        || type.contains("double")){
+            return true;
+        }else{
+            return false;
+        }
     }
     
-    public void setType(SqlDataTypes type){
-        this.type = type;
+    public boolean isString(){
+        if(type.contains("char") || type.contains("text") || type.contains("binary")){
+            return true;
+        }else{
+            return false;
+        }
+    }
+    
+    public boolean isDate(){
+        if(type.contains("date") || type.contains("time") || type.contains("year")){
+            return true;
+        }else{
+            return false;
+        }
+    }
+    
+    public boolean isLOB(){
+        if(type.contains("blob") || type.contains("longtext")){
+            return true;
+        }else{
+            return false;
+        }
     }
 
+    public String getName() {
+        return name;
+    }
+    
     @Override
     public String toString() {
         return "(" + type + ") " + name;
@@ -88,30 +118,9 @@ public class Column implements Nameable, Propertyable, Comparable<Column>{
        }
        return false;
     }
-    
-    public static SqlDataTypes mapType(String typeName){
-        switch(typeName){
-            case "shortint":
-                return SqlDataTypes.SHORTINT;
-            case "int":
-                return SqlDataTypes.INT;
-            case "biggint":
-                return SqlDataTypes.BIGINT;
-            case "varchar":
-                return SqlDataTypes.VARCHAR;
-            case "date":
-                return SqlDataTypes.DATE;
-            case "longblob":
-                return SqlDataTypes.BLOB;
-            default:
-                return SqlDataTypes.VARCHAR;
-        }
-    }
-    
+        
     public static ColumnKeys mapKey(String key){
         switch(key){
-            case "":
-                return ColumnKeys.NONE;
             case "PRI":
                 return ColumnKeys.PRI;
             case "UNI":
@@ -122,17 +131,7 @@ public class Column implements Nameable, Propertyable, Comparable<Column>{
                 return ColumnKeys.NONE;
         }
     }
-
-    @Override
-    public String getProperty() {
-        return type.toString();
-    }
-
-    @Override
-    public Object getPropertyVal() {
-        return name;
-    }
-
+   
     @Override
     public int compareTo(Column o) {
         return this.position - o.position;

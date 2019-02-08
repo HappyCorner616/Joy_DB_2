@@ -26,6 +26,7 @@ import com.mycompany.joy_db_2.model.sql.Schema;
 import com.mycompany.joy_db_2.model.sql.Table;
 import com.mycompany.joy_db_2.model.sql.enums.ColumnKeys;
 import com.mycompany.joy_db_2.model.sql.enums.SqlDataTypes;
+import java.sql.Blob;
 
 public class Requestor {
     
@@ -67,7 +68,7 @@ public class Requestor {
                 }
                 
                
-                SqlDataTypes type = Column.mapType(res.getString("COL_TYPE"));
+                String type = res.getString("COL_TYPE");
                 ColumnKeys key = Column.mapKey(res.getString("COL_KEY"));
                 int position = res.getInt("COL_POS");
                 String extra = res.getString("COL_EXTRA");
@@ -101,7 +102,7 @@ public class Requestor {
             ResultSet res = ps.executeQuery();
             while(res.next()){
                 String columnName = res.getString("COL_NAME");
-                SqlDataTypes type = Column.mapType(res.getString("COL_TYPE"));
+                String type = res.getString("COL_TYPE");
                 ColumnKeys key = Column.mapKey(res.getString("COL_KEY"));
                 int position = res.getInt("COL_POS");
                 String extra = res.getString("COL_EXTRA");
@@ -109,6 +110,7 @@ public class Requestor {
                 if(extra != null && extra.equals("auto_increment")){
                     autoincrement = true;
                 }
+                
                 Column column = new Column(columnName, type, key, autoincrement, position);
                 table.addColumn(column);
             }
@@ -149,21 +151,15 @@ public class Requestor {
         Row row = new Row();
         for(Column column : columns){
             try {
-                switch(column.getType()){
-                    case VARCHAR:            
-                        row.addCell(new Cell(column, resultSet.getString(column.getName())));
-                        break;
-                    case SHORTINT:
-                    case INT:
-                    case BIGINT:
-                        row.addCell(new Cell(column, resultSet.getInt(column.getName())));
-                        break;
-                    case DATE:
-                        row.addCell(new Cell(column, resultSet.getString(column.getName())));
-                        break;
-                    case BLOB:
-                        row.addCell(new Cell(column, resultSet.getBlob(column.getName())));
-                        break;
+                if(column.isLOB()){
+                    Blob blob = resultSet.getBlob(column.getName());
+                    row.addCell(new Cell(column, blob.length() / 1024));
+                }else if(column.isNumeric()){
+                    row.addCell(new Cell(column, resultSet.getInt(column.getName())));
+                }else if(column.isString()){
+                    row.addCell(new Cell(column, resultSet.getString(column.getName())));
+                }else if(column.isDate()){
+                    row.addCell(new Cell(column, resultSet.getString(column.getName())));
                 }
             } catch (SQLException ex) {
                     Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
@@ -184,7 +180,7 @@ public class Requestor {
             if(c.getColumn().getName().equalsIgnoreCase("id")) continue;
             
             sb.append(c.getProperty());
-            if(SqlDataTypes.isNumberType(c.getColumn().getType())){
+            if(c.getColumn().isNumeric()){
                 dataSb.append(c.getPropertyVal());
             }else{
                 dataSb.append("'" + c.getPropertyVal() + "'");
@@ -207,7 +203,7 @@ public class Requestor {
         return "SELECT tabs.TABLE_SCHEMA AS SCHEM_NAME,"
         + " tabs.TABLE_NAME AS TAB_NAME,"
         + " cols.COLUMN_NAME AS COL_NAME,"
-        + " cols.DATA_TYPE AS COL_TYPE,"
+        + " cols.COLUMN_TYPE AS COL_TYPE,"
         + " cols.ORDINAL_POSITION AS COL_POS,"
         + " cols.COLUMN_KEY AS COL_KEY,"
         + " cols.EXTRA AS COL_EXTRA"
@@ -221,7 +217,7 @@ public class Requestor {
     private String getTableQuery(String schemaName){
         return "SELECT tabs.TABLE_NAME AS TAB_NAME,"
         + " cols.COLUMN_NAME AS COL_NAME,"
-        + " cols.DATA_TYPE AS COL_TYPE,"
+        + " cols.COLUMN_TYPE AS COL_TYPE,"
         + " cols.ORDINAL_POSITION AS COL_POS,"
         + " cols.COLUMN_KEY AS COL_KEY,"
         + " cols.EXTRA AS COL_EXTRA"
