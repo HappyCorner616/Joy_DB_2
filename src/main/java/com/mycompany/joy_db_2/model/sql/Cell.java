@@ -3,7 +3,7 @@ package com.mycompany.joy_db_2.model.sql;
 
 import com.mycompany.joy_db_2.model.interfaces.EditablePropertyable;
 
-public class Cell implements EditablePropertyable, Comparable<Column>{
+public class Cell implements Comparable<Column>{
 
     private Column column;
     private Object val;
@@ -21,14 +21,24 @@ public class Cell implements EditablePropertyable, Comparable<Column>{
         return column;
     }
 
-    @Override
-    public String getProperty() {
-        return column.getName();
-    }
-
-    @Override
-    public Object getPropertyVal() {
+    public Object getVal() {
         return val;
+    }
+    
+    public int intVal(){
+        if(column.isInt()){
+            return ((Double)val).intValue();
+        }else{
+            return 0;
+        }
+    }
+    
+    public double decVal(){
+        if(column.isDecimal() || column.isInt()){
+            return (Double)val;
+        }else{
+            return 0D;
+        }
     }
 
     @Override
@@ -45,11 +55,6 @@ public class Cell implements EditablePropertyable, Comparable<Column>{
     @Override
     public int compareTo(Column o) {
         return this.column.compareTo(o);
-    }
-
-    @Override
-    public int typeForEditField(){
-        return 1;
     }
 
 }

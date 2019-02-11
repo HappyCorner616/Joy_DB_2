@@ -45,12 +45,19 @@ public class SchemaApi extends HttpServlet {
         
         response.setContentType("application/json;charset=utf-8");
        
-        Requestor requestor = new Requestor();
-        List<Schema> list = requestor.getAllSchemas();
-        Schemas schemas = new Schemas(list);
-        String responseBody = gson.toJson(schemas);   
+        String responseBody = "";
         
-        //String responseBody = gson.toJson("{name:'blablabla'}");
+        Requestor requestor = new Requestor();
+        try{
+            List<Schema> list = requestor.getAllSchemas();
+            Schemas schemas = new Schemas(list);
+            responseBody = gson.toJson(schemas);   
+        }catch(Exception e){
+            response.setStatus(401);
+            responseBody = e.getMessage();
+        }
+        
+        System.out.println("responseBody: " + responseBody);
                
         try(PrintWriter out = response.getWriter()){
             out.println(responseBody);
@@ -60,8 +67,7 @@ public class SchemaApi extends HttpServlet {
 
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         processRequest(request, response);
     }
 

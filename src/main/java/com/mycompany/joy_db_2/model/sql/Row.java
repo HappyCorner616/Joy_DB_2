@@ -50,7 +50,7 @@ public class Row implements Nameable {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for(Cell c : cells){
-            sb.append(c.getColumn().getName() + ": " + c.getPropertyVal() + "; ");
+            sb.append(c.getColumn().getName() + ": " + c.getVal() + "; ");
         }
         return sb.toString();
     }
@@ -66,11 +66,11 @@ public class Row implements Nameable {
            return "()";
        }
        for(Cell c : cells){
-           if(c.getColumn().getName().equalsIgnoreCase("id")){
-               return "(id) " + c.getPropertyVal();
+           if(c.getColumn().autoIncrement()){
+               return "(" + c.getColumn().getName() + ") " + c.getVal();
            }
        }
-       return "(" + cells.get(0).getColumn().getName() + ") " + cells.get(0).getPropertyVal();
+       return "(" + cells.get(0).getColumn().getName() + ") " + cells.get(0).getVal();
     }
 
 

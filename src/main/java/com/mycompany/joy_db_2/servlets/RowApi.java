@@ -67,12 +67,8 @@ public class RowApi extends HttpServlet {
             responseBody = gson.toJson(new ErrorResponse("wrong params"));
         }else{
             try {
-                if(requestor.addRow(row, schemaName, tableName)){
-                    requestBody = gson.toJson(new MessageResponse("Row was added"));
-                }else{
-                    response.setStatus(400);
-                    requestBody = gson.toJson(new MessageResponse("Row wasn't added"));
-                }
+                Row addedRow = requestor.addRow(row, schemaName, tableName);
+                responseBody = gson.toJson(addedRow);
             } catch (SQLException e) {
                 Logger.getLogger(RowApi.class.getName()).log(Level.SEVERE, null, e);
                 response.setStatus(400);

@@ -1,8 +1,6 @@
 
 package com.mycompany.joy_db_2.model.sql;
 
-import com.mycompany.joy_db_2.model.sql.enums.ColumnKeys;
-import com.mycompany.joy_db_2.model.sql.enums.SqlDataTypes;
 import com.mycompany.joy_db_2.model.interfaces.Nameable;
 import com.mycompany.joy_db_2.model.interfaces.Propertyable;
 
@@ -11,90 +9,100 @@ import java.util.Comparator;
 
 public class Column implements Comparable<Column>{
 
+    public static final int INT = 0;
+    public static final int DECIMAL = 1;
+    public static final int STRING = 2;
+    public static final int LOB = 3;
+    public static final int DATE = 4;
+    
     private String name;
-    private SqlDataTypes mainType;
+    private int position;
+    private int mainType;
     private String type;
     private boolean unsigned;
-    private ColumnKeys key;
-    private boolean autoIncrement;
-    private int position;
+    private int precision;
+    private int scale;
+    private String key;
+    private boolean autoIncrement; 
     
     public Column(){
-        name = "_";
-        mainType = SqlDataTypes.STRING;
-        type = "varchar(30)";
+        name = "_error_";
+        type = "_error_";
+        position = 0;
+        mainType = INT;
+        precision = 0;
+        scale = 0;
+        unsigned = false;
+        autoIncrement = false;
     }
     
-    public Column(String name){
-        this.name = name;
-        mainType = SqlDataTypes.STRING;
-        type = "varchar(30)";
-    }
-
-    public Column(String name, SqlDataTypes mainType, String type, boolean unsigned, ColumnKeys key, boolean autoIncrement, int position) {
-        this.name = name;
-        this.mainType = mainType;
-        this.type = type.split(" ")[0];
-        this.unsigned = unsigned;
-        this.key = key;
-        this.autoIncrement = autoIncrement;
-        this.position = position;
-    }
-    
-    public Column(String name, String type, ColumnKeys key, boolean autoIncrement, int position) {
+    public Column(String name, String type, String key, boolean autoIncrement, int position, int numericPrecision, int numericScale) {
         this.name = name;
         this.type = type.split(" ")[0];
         this.key = key;
         this.autoIncrement = autoIncrement;
         this.position = position;
-        if(isLOB()){
-            mainType = SqlDataTypes.LOB;
-        }else if(isNumeric()){
-            mainType = SqlDataTypes.NUMERIC;
-        }else if(isString()){
-            mainType = SqlDataTypes.STRING;
-        }else if(isDate()){
-            mainType = SqlDataTypes.DATE;
-        }
         unsigned = type.contains("unsigned");
+        if(type.contains("blob") || type.contains("longtext")){
+            mainType = LOB;
+        }else if(type.contains("bit") || type.contains("int")){
+            mainType = INT;
+            precision = numericPrecision;
+        }else if(type.contains("decimal") || type.contains("float") || type.contains("double")){
+            mainType = DECIMAL;
+            precision = numericPrecision;
+            scale = numericScale;
+        }else if(type.contains("char") || type.contains("text") || type.contains("binary")){
+            mainType = STRING;
+        }else if(type.contains("date") || type.contains("time") || type.contains("year")){
+            mainType = DATE;
+        }      
     }
 
-    public boolean isNumeric(){
-        if(type.contains("bit") || type.contains("int")
-        || type.contains("decimal") || type.contains("float")
-        || type.contains("double")){
-            return true;
-        }else{
-            return false;
-        }
-    }
-    
-    public boolean isString(){
-        if(type.contains("char") || type.contains("text") || type.contains("binary")){
-            return true;
-        }else{
-            return false;
-        }
-    }
-    
-    public boolean isDate(){
-        if(type.contains("date") || type.contains("time") || type.contains("year")){
-            return true;
-        }else{
-            return false;
-        }
-    }
-    
-    public boolean isLOB(){
-        if(type.contains("blob") || type.contains("longtext")){
-            return true;
-        }else{
-            return false;
-        }
+    public int getMainType() {
+        return mainType;
     }
 
     public String getName() {
         return name;
+    }
+    
+    public boolean isInt(){
+        return mainType == INT;
+    }
+    
+    public boolean isDecimal(){
+        return mainType == DECIMAL;
+    }
+    
+    public boolean isString(){
+        return mainType == STRING;
+    }
+    
+    public boolean isLOB(){
+        return mainType == LOB;
+    }
+    
+    public boolean isDate(){
+        return mainType == DATE;
+    }
+    
+    public boolean autoIncrement(){
+        return autoIncrement;
+    }
+    
+    public String information(){
+        return type
+                + " " + (unsigned ? "unsigned" : "")
+                + " " + key;
+    }
+    
+    public boolean isPK(){
+        return key.equals("PRI");
+    }
+
+    public boolean unsigned(){
+        return unsigned;
     }
     
     @Override
@@ -117,19 +125,6 @@ public class Column implements Comparable<Column>{
            }
        }
        return false;
-    }
-        
-    public static ColumnKeys mapKey(String key){
-        switch(key){
-            case "PRI":
-                return ColumnKeys.PRI;
-            case "UNI":
-                return ColumnKeys.UNI;
-            case "MUL":
-                return ColumnKeys.MUL;
-            default:
-                return ColumnKeys.NONE;
-        }
     }
    
     @Override
