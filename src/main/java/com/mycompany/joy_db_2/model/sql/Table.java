@@ -1,8 +1,6 @@
 
 package com.mycompany.joy_db_2.model.sql;
 
-import com.mycompany.joy_db_2.model.interfaces.Nameable;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -10,7 +8,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 
-public class Table implements Nameable {
+public class Table {
 
     private String schemaName;
     private String name;
@@ -36,7 +34,6 @@ public class Table implements Nameable {
         this.rows = new ArrayList<>();
     }
 
-    @Override
     public String getName(){
         return name;
     }
@@ -91,9 +88,19 @@ public class Table implements Nameable {
 
     public void addColumn(Column c) throws Exception{
         if(columns.containsKey(c.getName())){
-            throw new Exception("This colunm already exist!");
+            throw new Exception("Column '" + c.getName() + "' already exist");
         }
         columns.put(c.getName(), c);
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("'" + name + "'\n");
+        for(Row r : rows){
+            sb.append(r.toString() + "\n");
+        }
+        return sb.toString();
     }
 
 }

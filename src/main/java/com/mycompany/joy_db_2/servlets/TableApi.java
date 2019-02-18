@@ -35,6 +35,8 @@ public class TableApi extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        System.out.println("Table doGET:");
+        response.setContentType("application/json;charset=utf-8");
         System.out.println("request: " + request.toString());
         
         response.setContentType("application/json;charset=utf-8");
@@ -49,7 +51,7 @@ public class TableApi extends HttpServlet {
             Table table = requestor.getTable(schemaName, tableName, filled);
             String responseBody = gson.toJson(table);
             
-            System.out.println("responseBody: " + responseBody);
+            System.out.println("responseBody: " + table);
             
             try(PrintWriter out = response.getWriter()){
                 out.println(responseBody);

@@ -26,7 +26,7 @@
     for(Row row : rows){%>
         <%List<Cell> cells = row.getCells();
         for(Cell cell : cells){%>
-        <div class="rowCell"><%=cell.getPropertyVal()%></div>
+        <div class="rowCell"><%=cell.getVal()%></div>
         <%}%>
         <br>
     <%}%>

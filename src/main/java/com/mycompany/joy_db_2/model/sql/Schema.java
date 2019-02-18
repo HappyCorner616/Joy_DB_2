@@ -1,6 +1,5 @@
 package com.mycompany.joy_db_2.model.sql;
 
-import com.mycompany.joy_db_2.model.interfaces.Nameable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +7,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 
-public class Schema implements Nameable {
+public class Schema {
     private String name;
     Map<String, Table> tables;
     
@@ -17,7 +16,6 @@ public class Schema implements Nameable {
         tables = new TreeMap<>();
     }
 
-    @Override
     public String getName(){
         return name;
     }

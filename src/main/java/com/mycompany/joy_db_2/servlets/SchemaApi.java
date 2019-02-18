@@ -7,6 +7,7 @@ package com.mycompany.joy_db_2.servlets;
 
 import com.google.gson.Gson;
 import com.mycompany.joy_db_2.db.Requestor;
+import com.mycompany.joy_db_2.model.ErrorResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
@@ -54,7 +55,7 @@ public class SchemaApi extends HttpServlet {
             responseBody = gson.toJson(schemas);   
         }catch(Exception e){
             response.setStatus(401);
-            responseBody = e.getMessage();
+            responseBody = gson.toJson(new ErrorResponse(e.getMessage()));
         }
         
         System.out.println("responseBody: " + responseBody);

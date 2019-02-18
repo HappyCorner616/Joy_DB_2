@@ -25,17 +25,10 @@ import com.mycompany.joy_db_2.model.sql.Row;
 import com.mycompany.joy_db_2.model.sql.Schema;
 import com.mycompany.joy_db_2.model.sql.Table;
 import java.sql.Blob;
+import java.util.Collections;
+import javafx.print.Collation;
 
 public class Requestor {
-    
-    private static final String HEROKU_URI = "postgres://mhymvbvcmdathp:a4f43202bd4b441a0da9a4418c2aaae9517bc3476e4de22e7b14500382dd1777@ec2-54-243-223-245.compute-1.amazonaws.com:5432/dbiifilj2htvrs";
-    private static final String HEROKU_USER = "mhymvbvcmdathp";
-    private static final String HEROKU_PASSWORD = "a4f43202bd4b441a0da9a4418c2aaae9517bc3476e4de22e7b14500382dd1777";
-    private static final int HEROKU_MODE = 1;
-    private static final int LOCAL_MODE = 2;
-    
-    //private static final int CURRRENT_MODE = HEROKU_MODE;
-    private static final int CURRRENT_MODE = LOCAL_MODE;
     
     public List<Schema> getAllSchemas() throws Exception{
         Map<String, Schema> schemas = new TreeMap<>();
@@ -43,7 +36,7 @@ public class Requestor {
         Connection conn = getConnection();
         try {
             Statement statement = conn.createStatement();
-            ResultSet res = statement.executeQuery(getSchemaQuery());
+            ResultSet res = statement.executeQuery(schemaInformationQuery());
             while(res.next()){
                 
                 String schemaName = res.getString("SCHEM_NAME");             
@@ -54,6 +47,7 @@ public class Requestor {
                 }
                 
                 String tableName = res.getString("TAB_NAME");
+                if(tableName == null) continue;
                 Table table = schema.getTable(tableName);
                 if(table == null){
                     table = new Table(schema.getName(), tableName);
@@ -64,8 +58,9 @@ public class Requestor {
                     }
                 }
                 
-                
-                Column column = getColumnFromResultSet(res);
+                String columnName = res.getString("COL_NAME");
+                if(columnName == null) continue;
+                Column column = createColumnFromResultSet(res);
                 
                 try {
                     table.addColumn(column);
@@ -78,6 +73,12 @@ public class Requestor {
             Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
             throw new Exception(ex.getMessage());
         }
+        
+        for(Schema s : schemas.values()){
+            for(Table t : s.getTables()){
+                Collections.sort(t.getColumns());
+            }
+        }
 
         return new ArrayList<>(schemas.values());
     }
@@ -86,11 +87,10 @@ public class Requestor {
         Table table = new Table(schemaName, tableName);
         
         try(Connection conn = getConnection()){
-            String query = getTableQuery(schemaName) + " AND tabs.TABLE_NAME = '" + tableName + "'";
-            PreparedStatement ps = conn.prepareStatement(query);
+            PreparedStatement ps = conn.prepareStatement(tableInformationQuery(schemaName, tableName));
             ResultSet res = ps.executeQuery();
             while(res.next()){
-                Column column = getColumnFromResultSet(res);
+                Column column = createColumnFromResultSet(res);
                 table.addColumn(column);
             }
             
@@ -106,8 +106,117 @@ public class Requestor {
               
         return table == null ? new Table() : table;
     }
+        
+    public Row addRow(Row row, String schemaName, String tableName) throws SQLException{
+        Connection conn = getConnection();
+        Statement statement = conn.createStatement();
+        
+        StringBuilder colSb = new StringBuilder("INSERT INTO " + schemaName + "." + tableName + " (");
+        StringBuilder dataSb = new StringBuilder("(");
+        boolean firstVal = true;
+        List<Cell> cells = row.getCells();
+        for(int i = 0; i < cells.size(); i++){
+            Cell cl = cells.get(i);
+            Column cn = cl.getColumn();
+            
+            System.out.println("Column: " + cn.information());
+            
+            //большие данные пока не используем
+            if(cn.isLOB())continue;
+            
+            if(cn.isInt() && cn.autoIncrement() && cl.intVal() == 0){
+                continue;
+            }
+            
+            if(firstVal){
+                firstVal = false;               
+            }else{
+                colSb.append(", ");
+                dataSb.append(", ");
+            }
+            
+            colSb.append(cn.getName());
+            if(cn.isInt()){
+                dataSb.append(cl.intVal());
+            }else if(cn.isDecimal()){
+                dataSb.append(cl.decVal());
+            }else{
+                dataSb.append("'" + cl.getVal() + "'");
+            }
+            
+        }
+        colSb.append(") VALUES ");
+        dataSb.append(")");
+        System.out.println("SQL: " + colSb.toString() + dataSb.toString());
+        int added = statement.executeUpdate(colSb.toString() + dataSb.toString(), Statement.RETURN_GENERATED_KEYS);
+        ResultSet generated = statement.getGeneratedKeys();
+        System.out.println("generated: " + generated.toString());
+        
+        return row;        
+    }
     
-    private Column getColumnFromResultSet(ResultSet res){             
+    public Row updateRow(Row row, String schemaName, String tableName) throws SQLException{
+        Connection conn = getConnection();
+        Statement statement = conn.createStatement();
+        
+        StringBuilder colSb = new StringBuilder("UPDATE " + schemaName + "." + tableName + " SET");
+        StringBuilder dataSb = new StringBuilder();
+        boolean firstVal = true;
+        StringBuilder whereSb = new StringBuilder(" WHERE ");
+        List<Cell> cells = row.getCells();
+        for(int i = 0; i < cells.size(); i++){
+            Cell cl = cells.get(i);
+            Column cn = cl.getColumn();
+            
+            //большие данные пока не используем
+            if(cn.isLOB())continue;
+            
+            if(cn.isPK()){
+                whereSb.append(cn.getName() + "=");
+                if(cn.isInt()){
+                    whereSb.append(cl.intVal());
+                }else if(cn.isDecimal()){
+                    whereSb.append(cl.decVal());
+                }else{
+                    whereSb.append("'" + cl.getVal() + "'");
+                }
+                continue;
+            }
+            
+            if(cn.autoIncrement())continue;
+            
+            if(firstVal){
+                firstVal = false;               
+            }else{
+                dataSb.append(", ");
+            }
+            
+            dataSb.append(" " + cn.getName() + "=");
+            if(cn.isInt()){
+                dataSb.append(cl.intVal());
+            }else if(cn.isDecimal()){
+                dataSb.append(cl.decVal());
+            }else{
+                dataSb.append("'" + cl.getVal() + "'");
+            }
+  
+        }
+        System.out.println("SQL: " + colSb.toString() + dataSb.toString() + whereSb.toString());
+        int updated = statement.executeUpdate(colSb.toString() + dataSb.toString() + whereSb.toString(), Statement.RETURN_GENERATED_KEYS);
+        ResultSet generated = statement.getGeneratedKeys();
+        System.out.println("generated: " + generated.toString());
+        
+        return row;        
+    }
+    
+    public int insertUpdateData(String query) throws SQLException{
+        Connection conn = getConnection();
+        Statement statement = conn.createStatement();
+        int res = statement.executeUpdate(query);
+        return res;
+    }
+    
+    private Column createColumnFromResultSet(ResultSet res){             
         try {
             String columnName = res.getString("COL_NAME");
             String type = res.getString("COL_TYPE");
@@ -120,19 +229,23 @@ public class Requestor {
             if(extra != null && extra.equals("auto_increment")){
                 autoincrement = true;
             }
-            return new Column(columnName, type, key, autoincrement, position, numericPrecision, numericScale);
+            String refSchemaName = res.getString("KEY_SCHEMA");
+            String refTableName = res.getString("KEY_TABLE");
+            String refColumnName = res.getString("KEY_COLUMN");
+            
+            return new Column(columnName, type, key, autoincrement, position, numericPrecision, numericScale, refSchemaName, refTableName, refColumnName);
         } catch (SQLException ex) {
             Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);         
         }     
         return new Column();
     }
     
-    public void fillTable(Table table){
+    private void fillTable(Table table){
         table.clearRows();
         Connection conn = getConnection();       
         try {
             Statement statement = conn.createStatement();
-            ResultSet resultSet = statement.executeQuery(getRowsQuery(table.getSchemaName(), table.getName()));
+            ResultSet resultSet = statement.executeQuery(tableDataQuery(table.getSchemaName(), table.getName()));
             while(resultSet.next()){
                 Row row = filledRow(table.getColumns(), resultSet);
                 try {
@@ -169,47 +282,18 @@ public class Requestor {
         return row;
     }
     
-    public Row addRow(Row row, String schemaName, String tableName) throws SQLException{
-        Connection conn = getConnection();
-        Statement statement = conn.createStatement();
-        
-        StringBuilder colSb = new StringBuilder("INSERT INTO " + schemaName + "." + tableName + " (");
-        StringBuilder dataSb = new StringBuilder("(");
-        List<Cell> cells = row.getCells();
-        for(int i = 0; i < cells.size(); i++){
-            Cell cl = cells.get(i);
-            Column cn = cl.getColumn();
-            
-            if(cn.isInt() && cn.autoIncrement() && cl.intVal() > 0){
-                continue;
-            }
-            
-            colSb.append(cn.getName());
-            if(cn.isInt()){
-                dataSb.append(cl.intVal());
-            }else if(cn.isDecimal()){
-                dataSb.append(cl.decVal());
-            }else{
-                dataSb.append("'" + cl.getVal() + "'");
-            }
-  
-            if(i < cells.size() - 1){
-                colSb.append(", ");
-                dataSb.append(", ");
-            }
-        }
-        colSb.append(") VALUES ");
-        dataSb.append(")");
-        System.out.println("SQL: " + colSb.toString() + dataSb.toString());
-        int added = statement.executeUpdate(colSb.toString() + dataSb.toString(), Statement.RETURN_GENERATED_KEYS);
-        ResultSet generated = statement.getGeneratedKeys();
-        System.out.println("generated: " + generated.toString());
-        
-        return row;        
+    private String schemaInformationQuery(){
+        String condition = "WHERE schms.SCHEMA_NAME NOT IN ('sys', 'mysql', 'information_schema', 'performance_schema')";
+        return informationQuery(condition);
     }
     
-    private String getSchemaQuery(){
-        return "SELECT tabs.TABLE_SCHEMA AS SCHEM_NAME,"
+    private String tableInformationQuery(String schemaName, String tableName){
+        String condition = "WHERE schms.SCHEMA_NAME='" + schemaName + "' AND tabs.TABLE_NAME='" + tableName + "'";
+        return informationQuery(condition);
+    }
+    
+    private String informationQuery(String condition){
+        return " SELECT schms.SCHEMA_NAME AS SCHEM_NAME,"
         + " tabs.TABLE_NAME AS TAB_NAME,"
         + " cols.COLUMN_NAME AS COL_NAME,"
         + " cols.COLUMN_TYPE AS COL_TYPE,"
@@ -217,40 +301,39 @@ public class Requestor {
         + " cols.NUMERIC_SCALE AS NUM_SCALE,"        
         + " cols.ORDINAL_POSITION AS COL_POS,"
         + " cols.COLUMN_KEY AS COL_KEY,"
-        + " cols.EXTRA AS COL_EXTRA"
-        + " FROM information_schema.tables AS tabs"
+        + " cols.EXTRA AS COL_EXTRA,"
+        + " refs.REF_SCHM_NAME AS KEY_SCHEMA,"
+        + " refs.REF_TML_NAME AS KEY_TABLE,"
+        + " refs.REF_CLMN_NAME AS KEY_COLUMN"
+        + " FROM information_schema.SCHEMATA AS schms"
+        + " LEFT JOIN information_schema.tables AS tabs "
+        + " ON schms.SCHEMA_NAME = tabs.TABLE_SCHEMA"
         + " LEFT JOIN information_schema.columns AS cols"
         + " ON tabs.TABLE_SCHEMA = cols.TABLE_SCHEMA"
         + " AND tabs.TABLE_NAME = cols.TABLE_NAME"
-        + " WHERE tabs.TABLE_SCHEMA NOT IN ('sys', 'mysql', 'information_schema', 'performance_schema')";
+        + " LEFT JOIN (" + " SELECT refs.TABLE_SCHEMA AS SCHM_NAME,"
+        + " refs.TABLE_NAME AS TBL_NAME,"
+        + " refs.COLUMN_NAME AS CLMN_NAME,"
+        + " refs.REFERENCED_TABLE_SCHEMA AS REF_SCHM_NAME,"
+        + " refs.REFERENCED_TABLE_NAME AS REF_TML_NAME,"
+        + " refs.REFERENCED_COLUMN_NAME AS REF_CLMN_NAME"
+        + " FROM information_schema.KEY_COLUMN_USAGE AS refs"
+        + " WHERE NOT ISNULL(refs.REFERENCED_TABLE_SCHEMA)"
+        + " AND NOT ISNULL(refs.REFERENCED_TABLE_NAME)"
+        + " AND NOT ISNULL(refs.REFERENCED_COLUMN_NAME))" + " AS refs"
+        + " ON cols.TABLE_SCHEMA = refs.SCHM_NAME"
+        + " AND cols.TABLE_NAME = refs.TBL_NAME"
+        + " AND cols.COLUMN_NAME = refs.CLMN_NAME"
+        + " " + condition + ";";
+                
     }
     
-    private String getTableQuery(String schemaName){
-        return "SELECT tabs.TABLE_NAME AS TAB_NAME,"
-        + " cols.COLUMN_NAME AS COL_NAME,"
-        + " cols.COLUMN_TYPE AS COL_TYPE,"
-        + " cols.NUMERIC_PRECISION AS NUM_PRECISION,"
-        + " cols.NUMERIC_SCALE AS NUM_SCALE,"
-        + " cols.ORDINAL_POSITION AS COL_POS,"
-        + " cols.COLUMN_KEY AS COL_KEY,"
-        + " cols.EXTRA AS COL_EXTRA"
-        + " FROM information_schema.tables AS tabs"
-        + " LEFT JOIN information_schema.columns AS cols"
-        + " ON tabs.TABLE_SCHEMA = cols.TABLE_SCHEMA"
-        + " AND tabs.TABLE_NAME = cols.TABLE_NAME"
-        + " WHERE tabs.TABLE_SCHEMA = '" + schemaName + "'";
-    }
-    
-    private String getRowsQuery(String schemaName, String tableName){
+    private String tableDataQuery(String schemaName, String tableName){
         return "SELECT * FROM " + schemaName + "." + tableName;
     }
     
     private Connection getConnection(){
-       if(CURRRENT_MODE == LOCAL_MODE){
-           return getMySqlConnection();
-       }else{
-           return getPostgreSqlConnection();
-       }      
+       return getMySqlConnection();  
     }
     
     private Connection getMySqlConnection(){
@@ -276,28 +359,7 @@ public class Requestor {
         return conn;
     }
     
-    private Connection getPostgreSqlConnection(){
-        Connection conn = null;
-        
-        try {
-//            InitialContext ic = new InitialContext();
-//            DataSource ds = (DataSource) ic.lookup("java:comp/env/jdbc/_MySQLSchemas");
-//            conn = ds.getConnection();
-            Class.forName("org.postgresql.Driver").newInstance();
-            conn = DriverManager.getConnection("postgres://mhymvbvcmdathp:a4f43202bd4b441a0da9a4418c2aaae9517bc3476e4de22e7b14500382dd1777@ec2-54-243-223-245.compute-1.amazonaws.com:5432/dbiifilj2htvrs");
-            //conn = DriverManager.getConnection("jdbc.mysql://localhost:3306/?udeSSL=false&serverTmeZome=Europe/Moscow", "glassfishsql", "qwerty");
-        } catch (SQLException ex) {
-            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            Logger.getLogger(Requestor.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        return conn;
-    }
+    
     
 }
 

@@ -50,12 +50,14 @@ public class RowApi extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         System.out.println("Row POST");
+        response.setContentType("application/json;charset=utf-8");
         
         String schemaName = request.getHeader("schemaName");
         String tableName = request.getHeader("tableName");
         
         String requestBody = getRequestBody(request);
         Row row = gson.fromJson(requestBody, Row.class);
+        System.out.println("requestBody: " + row);
         
         boolean isSuccessful = true;
         String responseBody;
@@ -77,14 +79,49 @@ public class RowApi extends HttpServlet {
         }
         
         try(PrintWriter out = response.getWriter()){
-            out.println(requestBody);
+            System.out.println("responseBody: " + responseBody);
+            out.println(responseBody);
         }
         
     }
+    
 
     @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         System.out.println("Row PUT");
+        response.setContentType("application/json;charset=utf-8");
+        
+        String schemaName = request.getHeader("schemaName");
+        String tableName = request.getHeader("tableName");
+        
+        String requestBody = getRequestBody(request);
+        Row row = gson.fromJson(requestBody, Row.class);
+        System.out.println("requestBody: " + row);
+        
+        boolean isSuccessful = true;
+        String responseBody;
+        Requestor requestor = new Requestor();
+        
+        if(schemaName == null || tableName == null || row == null){
+            isSuccessful = false;
+            response.setStatus(400);
+            responseBody = gson.toJson(new ErrorResponse("wrong params"));
+        }else{
+            try {
+                Row addedRow = requestor.updateRow(row, schemaName, tableName);
+                responseBody = gson.toJson(addedRow);
+            } catch (SQLException e) {
+                Logger.getLogger(RowApi.class.getName()).log(Level.SEVERE, null, e);
+                response.setStatus(400);
+                responseBody = gson.toJson(new ErrorResponse(e.getMessage()));
+            }
+        }
+                
+        try(PrintWriter out = response.getWriter()){
+            System.out.println("responseBody: " + responseBody);
+            out.println(responseBody);
+        }
+        
     }
     
     

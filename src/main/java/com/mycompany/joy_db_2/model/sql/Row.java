@@ -1,14 +1,11 @@
-
 package com.mycompany.joy_db_2.model.sql;
-
-import com.mycompany.joy_db_2.model.interfaces.Nameable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class Row implements Nameable {
+public class Row{
 
     private List<Cell> cells;
 
@@ -37,6 +34,15 @@ public class Row implements Nameable {
             }
         }
     }
+    
+    public Object getVal(String columnName){
+        for(Cell c : cells){
+            if(c.getColumn().getName().equals(columnName)){
+                return c.getVal();
+            }
+        }
+        return null;
+    }
 
     public Set<Column> columns(){
         Set<Column> columns = new HashSet<>();
@@ -50,7 +56,7 @@ public class Row implements Nameable {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for(Cell c : cells){
-            sb.append(c.getColumn().getName() + ": " + c.getVal() + "; ");
+            sb.append("[" + c.toString() + "]");
         }
         return sb.toString();
     }
@@ -60,19 +66,16 @@ public class Row implements Nameable {
         return list;
     }
 
-    @Override
     public String getName() {
        if(cells.size() == 0){
            return "()";
        }
        for(Cell c : cells){
-           if(c.getColumn().autoIncrement()){
-               return "(" + c.getColumn().getName() + ") " + c.getVal();
+           if(c.getColumn().getName().equalsIgnoreCase("id")){
+               return "(id) " + c.getVal();
            }
        }
        return "(" + cells.get(0).getColumn().getName() + ") " + cells.get(0).getVal();
     }
-
-
 
 }
